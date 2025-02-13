@@ -1,29 +1,27 @@
 """
 title: Co2 Emission
-author: Erasme - Yassin Siouda
+author: Erasme - Yassin Siouda x Claude
 author_url: https://github.com/open-webui 
 version: 0.0.1
 required_open_webui_version: 0.3.9
 description: This plugin calculates the amount of CO2 emitted by a message credits to constLiakos for the sec duration count.
 """
 
-from pydantic import BaseModel, Field
-from typing import Optional, Union, Generator, Iterator, Callable, Any, Awaitable
-from datetime import datetime
-import os
-import aiohttp
-import asyncio
-import time
 
+from pydantic import BaseModel, Field
+from typing import Optional, Callable, Any, Awaitable
+from datetime import datetime, timedelta
+import aiohttp
+import time
+import json
+import urllib.parse
 
 class Filter:
     class Valves(BaseModel):
-        watts: float = 350  # Power in watts
+        watts: float = 350
         gr_co2_kWh: float = 55
         nocodb_url: str = Field(default="https://nocodb.url")
-        nocodb_api_token: str = Field(
-            default="mytoken"
-        )
+        nocodb_api_token: str = Field(default="mytoken")
         table_id: str = Field(default="tableId")
 
     def __init__(self):
@@ -34,6 +32,43 @@ class Filter:
         self.start_time = time.time()
         return body
 
+    async def fetch_user_stats(self, user_id: str, nocodb_url: str, headers: dict) -> dict:
+        """Fetch user statistics for the past week"""
+        try:
+            # Create where condition without encoding the "where=" part
+            where_raw = f"where=(user,eq,{user_id})"
+            
+            async with aiohttp.ClientSession() as session:
+                url = f"{nocodb_url}/api/v2/tables/{self.valves.table_id}/records"
+                params = {
+                    "where": where_raw,  # Use raw where condition
+                    "sort": "-date",
+                    "limit": 1000,
+                    "shuffle": 0,
+                    "offset": 0
+                }
+                
+                print(f"Fetching stats from URL: {url}")
+                print(f"With params: {params}")
+                
+                async with session.get(
+                    url,
+                    headers=headers,
+                    params=params
+                ) as response:
+                    response_text = await response.text()
+                    print(f"Response status: {response.status}")
+                    print(f"Response body: {response_text}")
+                    
+                    if response.status == 200:
+                        return json.loads(response_text)
+                    else:
+                        print(f"Error fetching stats: {response.status}")
+                        return None
+        except Exception as e:
+            print(f"Exception in fetch_user_stats: {str(e)}")
+            return None
+
     async def outlet(
         self,
         body: dict,
@@ -41,51 +76,46 @@ class Filter:
         __user__: Optional[dict] = None,
     ) -> dict:
         try:
+            # Calculate current message CO2
             end_time = time.time()
             elapsed_seconds = end_time - self.start_time
-
-            # Calculate CO2 emissions
             kw = self.valves.watts / 1000
             hours = elapsed_seconds / 3600
             co2 = round((kw * hours) * self.valves.gr_co2_kWh, 2)
 
-            notif = f"🏭 {co2}g de Co2"
-
-            # Create NocoDB entry if user is present
             if __user__:
-                today = datetime.now().strftime("%Y-%m-%d")
-
-                # Get user ID, default to null if not found
                 user_id = __user__.get("id")
-                if user_id is None:
-                    print("No valid user ID found, skipping database entry")
-                    await __event_emitter__(
-                        {"type": "status", "data": {"description": notif, "done": True}}
-                    )
-                    return body
-
+                today = datetime.now().strftime("%Y-%m-%d")
+                
                 headers = {
                     "xc-token": self.valves.nocodb_api_token,
                     "Content-Type": "application/json",
                     "accept": "application/json",
                 }
 
+                # Log current message CO2
                 data = {"user": user_id, "co2": co2, "date": today}
-
-                print(f"Sending request to NocoDB with data: {data}")
-
+                
+                print(f"Sending data to NocoDB: {data}")
+                
                 async with aiohttp.ClientSession() as session:
                     async with session.post(
                         f"{self.valves.nocodb_url}/api/v2/tables/{self.valves.table_id}/records",
                         headers=headers,
                         json=data,
                     ) as response:
-                        if response.status != 201:
-                            response_text = await response.text()
-                            print(f"Error logging to NocoDB: Status {response.status}")
-                            print(f"Response body: {response_text}")
-                        else:
-                            print("Successfully logged to NocoDB")
+                        response_text = await response.text()
+                        print(f"NocoDB response status: {response.status}")
+                        print(f"NocoDB response body: {response_text}")
+
+                # Fetch weekly stats
+                stats = await self.fetch_user_stats(user_id, self.valves.nocodb_url, headers)
+                if stats and 'list' in stats:
+                    # Calculate total CO2 for the week
+                    total_co2 = sum(float(entry.get('co2', 0)) for entry in stats['list'])
+                    notif = f"🏭 Current message: {co2}g CO2 | Weekly total: {round(total_co2, 2)}g CO2"
+                else:
+                    notif = f"🏭 {co2}g CO2 (First message tracked!)"
 
             await __event_emitter__(
                 {"type": "status", "data": {"description": notif, "done": True}}
