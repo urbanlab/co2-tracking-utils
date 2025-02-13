@@ -1,0 +1,15 @@
+version: '3.7'
+services:
+  dashboard-dev:
+    image: erasme/co2-dashboard:dev
+    build: 
+      context: dashboard/
+      target: "dev"
+    volumes:
+      - ./dashboard/src/:/app/src
+      - ./dashboard/package.json:/app/package.json
+      - ./dashboard/package-lock.json:/app/package-lock.json
+    ports:
+      - "${dashboard_PORT}:3000" #keep same port to avoid Cross scripting errors
+    env_file:
+      - .env
