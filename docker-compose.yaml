@@ -10,6 +10,6 @@ services:
       - ./dashboard/package.json:/app/package.json
       - ./dashboard/package-lock.json:/app/package-lock.json
     ports:
-      - "${dashboard_PORT}:3000" #keep same port to avoid Cross scripting errors
+      - "5173:5173"
     env_file:
       - .env
