@@ -12,5 +12,7 @@ export interface Row {
 
 export interface TableRecord {
     name: string;
-    data: Table[];
+    data: {
+        list: Row[];
+    }
 }
