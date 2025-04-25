@@ -5,19 +5,10 @@
 	let { children } = $props();
 	// Load the table data when the component is mounted
 	onMount( async () => {
-		await watchTables();
+		//await watchTables();
 	});
 	
 </script>
-<div class="flex">
-	<nav class="w-1/5">
-		<ul>
-			{#if $tables}
-				{#each $tables as table}
-					<li><a href="/table/{table.name}">{table.name}</a></li>
-				{/each}
-			{/if}
-		</ul>
-	</nav>
+<div class="flex w-full">
 	{@render children()}
 </div>

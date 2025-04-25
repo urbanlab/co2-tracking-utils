@@ -1,1 +1,17 @@
 @import 'tailwindcss';
+
+.stat {
+    @apply border rounded-xl p-4 border-red-300 flex flex-col items-center m-2 cursor-pointer text-gray-800 bg-white shadow-lg;
+}
+.stat p {
+    @apply text-2xl font-bold text-center;
+}
+.stat:hover {
+    @apply scale-105;
+}
+.stat-active {
+    @apply border-3
+}
+.stat-active:hover {
+    @apply scale-100;
+}

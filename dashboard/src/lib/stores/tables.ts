@@ -17,8 +17,10 @@ export async function fetchTables(userId?: string) {
   const tableData = await Promise.all(tablesId.map(async (tableId) => {
     let queryOptions = { tableId };
     if (userId) {
+      console.log('fetching tables for userId', userId);
       queryOptions = { ...queryOptions, where: buildWhereClause(userId) };
     }
+    console.log('queryOptions', queryOptions);
     return trpc().getTableById.query(queryOptions);
   }));
   tables.set(tableData.map((data, index) => {
@@ -30,7 +32,7 @@ export async function fetchTables(userId?: string) {
 }
 
 export async function watchTables(userId?: string) {
-  console.log('watching tables');
+  console.log('watching tables', userId);
   fetchTables(userId);
   const intervalId = setInterval(() => fetchTables(userId), 10000);
 

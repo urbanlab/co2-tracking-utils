@@ -11,17 +11,27 @@ const nocodb = {
 };
 
 console.log(nocodb)
-
 export const router = t.router({
     greeting: t.procedure.query(async () => {
         return `Hello tRPC v10 @ ${new Date().toLocaleTimeString()}`;
     }),
-    // get table by id
+    // get table by id with optional userId filter
     getTableById: t.procedure
-        .input(z.object({ tableId: z.string() }))
+        .input(z.object({ 
+            tableId: z.string(),
+            where: z.string().optional() 
+        }))
         .query(async ({ input }) => {
             try {
-                const response = await fetch(`${nocodb.url}/api/v2/tables/${input.tableId}/records`, {
+                // Build the URL with optional where parameter
+                let url = `${nocodb.url}/api/v2/tables/${input.tableId}/records`;
+                
+                // Add the where query parameter if provided
+                if (input.where) {
+                    url += `?${input.where}`;
+                }
+                
+                const response = await fetch(url, {
                     headers: {
                         'xc-token': nocodb.token,
                         'Content-Type': 'application/json'
@@ -33,6 +43,7 @@ export const router = t.router({
                 }
                 
                 const data = await response.json();
+                console.log('Fetched data:', data);
                 return data;
             } catch (error) {
                 console.error('Error fetching table:', error);
