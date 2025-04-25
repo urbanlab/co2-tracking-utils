@@ -113,7 +113,7 @@ class Filter:
                 if stats and 'list' in stats:
                     # Calculate total CO2 for the week
                     total_co2 = sum(float(entry.get('co2', 0)) for entry in stats['list'])
-                    notif = f"🏭 Current message: {co2}g CO2 | Weekly total: {round(total_co2, 2)}g CO2"
+                    notif = f"🏭 Current message: {co2}g CO2 | Total: {round(total_co2, 2)}g CO2"
                 else:
                     notif = f"🏭 {co2}g CO2 (First message tracked!)"
 
