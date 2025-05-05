@@ -1,20 +1,21 @@
 """
 title: Co2 Emission
 author: Erasme - Yassin Siouda x Claude
-author_url: https://github.com/open-webui 
+author_url: https://github.com/open-webui
 version: 0.0.1
 required_open_webui_version: 0.3.9
 description: This plugin calculates the amount of CO2 emitted by a message credits to constLiakos for the sec duration count.
 """
 
-
-from pydantic import BaseModel, Field
-from typing import Optional, Callable, Any, Awaitable
-from datetime import datetime, timedelta
-import aiohttp
-import time
 import json
+import time
 import urllib.parse
+from datetime import datetime, timedelta
+from typing import Any, Awaitable, Callable, Optional
+
+import aiohttp
+from pydantic import BaseModel, Field
+
 
 class Filter:
     class Valves(BaseModel):
@@ -23,6 +24,7 @@ class Filter:
         nocodb_url: str = Field(default="https://nocodb.url")
         nocodb_api_token: str = Field(default="mytoken")
         table_id: str = Field(default="tableId")
+        dashboard_url: str = Field(default="https://dashboard_url.club")
 
     def __init__(self):
         self.valves = self.Valves()
@@ -32,12 +34,14 @@ class Filter:
         self.start_time = time.time()
         return body
 
-    async def fetch_user_stats(self, user_id: str, nocodb_url: str, headers: dict) -> dict:
+    async def fetch_user_stats(
+        self, user_id: str, nocodb_url: str, headers: dict
+    ) -> dict:
         """Fetch user statistics for the past week"""
         try:
             # Create where condition without encoding the "where=" part
             where_raw = f"where=(user,eq,{user_id})"
-            
+
             async with aiohttp.ClientSession() as session:
                 url = f"{nocodb_url}/api/v2/tables/{self.valves.table_id}/records"
                 params = {
@@ -45,21 +49,17 @@ class Filter:
                     "sort": "-date",
                     "limit": 1000,
                     "shuffle": 0,
-                    "offset": 0
+                    "offset": 0,
                 }
-                
+
                 print(f"Fetching stats from URL: {url}")
                 print(f"With params: {params}")
-                
-                async with session.get(
-                    url,
-                    headers=headers,
-                    params=params
-                ) as response:
+
+                async with session.get(url, headers=headers, params=params) as response:
                     response_text = await response.text()
                     print(f"Response status: {response.status}")
                     print(f"Response body: {response_text}")
-                    
+
                     if response.status == 200:
                         return json.loads(response_text)
                     else:
@@ -86,7 +86,7 @@ class Filter:
             if __user__:
                 user_id = __user__.get("id")
                 today = datetime.now().strftime("%Y-%m-%d")
-                
+
                 headers = {
                     "xc-token": self.valves.nocodb_api_token,
                     "Content-Type": "application/json",
@@ -95,9 +95,9 @@ class Filter:
 
                 # Log current message CO2
                 data = {"user": user_id, "co2": co2, "date": today}
-                
+
                 print(f"Sending data to NocoDB: {data}")
-                
+
                 async with aiohttp.ClientSession() as session:
                     async with session.post(
                         f"{self.valves.nocodb_url}/api/v2/tables/{self.valves.table_id}/records",
@@ -109,27 +109,55 @@ class Filter:
                         print(f"NocoDB response body: {response_text}")
 
                 # Fetch weekly stats
-                stats = await self.fetch_user_stats(user_id, self.valves.nocodb_url, headers)
-                if stats and 'list' in stats:
+                stats = await self.fetch_user_stats(
+                    user_id, self.valves.nocodb_url, headers
+                )
+                if stats and "list" in stats:
                     # Calculate total CO2 for the week
-                    total_co2 = sum(float(entry.get('co2', 0)) for entry in stats['list'])
-                    notif = f"🏭 Current message: {co2}g CO2 | Total: {round(total_co2, 2)}g CO2"
-                else:
-                    notif = f"🏭 {co2}g CO2 (First message tracked!)"
+                    total_co2 = sum(
+                        float(entry.get("co2", 0)) for entry in stats["list"]
+                    )
 
-            await __event_emitter__(
-                {"type": "status", "data": {"description": notif, "done": True}}
-            )
+                    # Create CO2 consumption message in markdown format
+                    co2_message = f"""
+---
+<details>
+<summary>Ma consomation co2</summary>
+Ce message: {co2}g CO2 
+Total: {round(total_co2, 2)}g CO2 
+Pour en savoir plus, consultez votre tableau de bord: {self.valves.dashboard_url}/user/{user_id}
+</details>
+"""
+                else:
+                    co2_message = f"""
+---
+<details>
+<summary>Ma consomation co2</summary>
+Ce message: {co2}g CO2 
+Total: {co2}g CO2 (First message tracked!)
+Pour en savoir plus, consultez votre tableau de bord: {self.valves.dashboard_url}/user/{user_id}
+</details>
+"""
+
+                # Append CO2 information to the response message content
+                if body and "messages" in body and len(body["messages"]) > 0:
+                    last_message = body["messages"][-1]
+                    if "content" in last_message:
+                        last_message["content"] += co2_message
+
+                # Also emit the CO2 information as a separate message to ensure it appears
+                # This helps in case direct body modification doesn't work
+                await __event_emitter__(
+                    {
+                        "type": "message",
+                        "data": {"content": co2_message},
+                    }
+                )
+
             return body
 
         except Exception as e:
             print(f"Error in outlet: {str(e)}")
-            await __event_emitter__(
-                {
-                    "type": "status",
-                    "data": {"description": "Error calculating CO2", "done": True},
-                }
-            )
             return body
 
 

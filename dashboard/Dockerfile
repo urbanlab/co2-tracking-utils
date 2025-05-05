@@ -10,7 +10,7 @@ COPY svelte.config.js /app/svelte.config.js
 COPY tsconfig.json /app/tsconfig.json
 COPY vite.config.ts /app/vite.config.ts
 
-RUN npm ci
+RUN npm install
 
 EXPOSE 5173
 

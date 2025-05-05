@@ -1,10 +1,10 @@
 version: "3.7"
 services:
   dashboard-dev:
-    image: erasme/co2-dashboard:test
+    image: erasme/co2-dashboard:dev
     build:
       context: dashboard/
-      target: "dev"
+      target: "prod"
     volumes:
       - ./dashboard/src/:/app/src
       - ./dashboard/package.json:/app/package.json
