@@ -178,12 +178,12 @@
 	</div>
 	<div class="w-1/3">
 		{#key currentCo2}
-			<span class="hidden">{currentCo2.toFixed(2) / 100}</span>
+			<span class="hidden">{currentCo2.toFixed(2) / 1000}</span>
 			<script
 				name="impact-co2"
 				src="https://impactco2.fr/iframe.js"
 				data-type="comparateur"
-				data-search={`?value=${currentCo2.toFixed(2) / 100}&comparisons=email,rechercheweb,visioconference,biere,cafe,metro&language=fr&theme=default"`}
+				data-search={`?value=${currentCo2.toFixed(2) / 1000}&comparisons=email,rechercheweb,visioconference,biere,cafe,metro&language=fr&theme=default"`}
 			></script>
 		{/key}
 	</div>
