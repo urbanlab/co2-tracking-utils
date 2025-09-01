@@ -120,7 +120,6 @@ class Filter:
 
                     # Create CO2 consumption message in markdown format
                     co2_message = f"""
----
 <details>
 <summary>Ma consomation co2</summary>
 Ce message: {co2}g CO2 
@@ -130,7 +129,6 @@ Pour en savoir plus, consultez votre tableau de bord: {self.valves.dashboard_url
 """
                 else:
                     co2_message = f"""
----
 <details>
 <summary>Ma consomation co2</summary>
 Ce message: {co2}g CO2 
