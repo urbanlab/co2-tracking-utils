@@ -13,3 +13,36 @@ services:
       - "5173:5173"
     env_file:
       - .env
+
+  api:
+    image: erasme/co2-api:test
+    build:
+      context: api/
+    volumes:
+      - ./api/:/app
+    ports:
+      - "8000:8000"
+    env_file:
+      - .env
+  
+  prometheus:
+    container_name: prometheus
+    image: prom/prometheus
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml
+      - prometheus-data:/prometheus
+    ports:
+      - "9090:9090"
+  
+  grafana:
+    image: grafana/grafana:latest
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+    ports:
+      - "3001:3000"
+    volumes:
+      - grafana-storage:/var/lib/grafana
+
+volumes:
+  grafana-storage:
+  prometheus-data:
