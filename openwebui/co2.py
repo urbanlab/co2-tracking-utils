@@ -161,7 +161,6 @@ class Filter:
 Ce message: {co2}g CO2 (Model: {model}, Tokens: ~{token_count})
 Total cette semaine: {round(weekly_total, 2)}g CO2 
 Pour en savoir plus, consultez votre tableau de bord: {self.valves.dashboard_url}/user/{user_id}
-Status: {"✅ Métrique envoyée" if success else "❌ Erreur envoi métrique"}
 </details>
 """
 
