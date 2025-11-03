@@ -80,10 +80,6 @@ async def get_user_co2_emission(user_id: str, range: str = "daily"):
         # Check if the query was successful
         if result.get("status") != "success":
             raise HTTPException(status_code=500, detail=f"Prometheus query failed: {result}")
-            
-        # round to integer
-        for item in result["data"]["result"]:
-            item["value"][1] = int(float(item["value"][1]))
 
         return result
         

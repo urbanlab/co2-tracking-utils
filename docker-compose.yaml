@@ -1,7 +1,7 @@
 version: "3.7"
 services:
   dashboard-dev:
-    image: erasme/co2-dashboard:test
+    image: erasme/co2-dashboard:latest
     build:
       context: dashboard/
       target: "dev"
@@ -15,7 +15,7 @@ services:
       - .env
 
   api:
-    image: erasme/co2-api:test
+    image: erasme/co2-api:latest
     build:
       context: api/
     volumes:
