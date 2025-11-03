@@ -1,7 +1,6 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import '../app.css';
-	import { tables, watchTables } from '$lib/stores/tables';
 	let { children } = $props();
 	// Load the table data when the component is mounted
 	onMount( async () => {
